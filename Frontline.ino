@@ -12,9 +12,13 @@ bool holdingActive = false;
 int lastDisplayedSecond = -1;
 
 void startFrontline() {
-  // First, prompt user for custom game time (e.g. enter 0090 for 90 seconds)
+  // 1. Prompt user for custom game time (e.g. enter 0090 for 90 seconds)
   FRONTLINE_DURATION = getGameDuration("FRONTLINE TIME");
 
+  // 2. Run the 10-second pre-game launch sequence with beeps & countdown
+  runLaunchCountdown();
+
+  // 3. Official match start
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("FRONTLINE ACTIVE");
@@ -40,7 +44,6 @@ void runFrontline() {
       int seconds = remaining % 60;
       displayNumber((minutes * 100) + seconds);
     } else {
-      // Match timer hits zero
       displayNumber(0000);
       frontlineFinished = true;
      
@@ -56,8 +59,7 @@ void runFrontline() {
         lcd.print("RESULT: DRAW    ");
       }
      
-      // End game horn/buzzer
-      tone(RELAY_PIN, 1000, 2000); // 2-second end-game alarm
+      tone(RELAY_PIN, 1000, 2000);
     }
   }
 
@@ -66,27 +68,22 @@ void runFrontline() {
     bool redPressed = (digitalRead(RED_BTN) == LOW);
     bool bluePressed = (digitalRead(BLUE_BTN) == LOW);
 
-    // Determine which button is currently being held
     int currentPressedTeam = 0;
     if (redPressed && !bluePressed) currentPressedTeam = 1;
     if (bluePressed && !redPressed) currentPressedTeam = 2;
 
-    // If a button is held down and it's not already controlled by this team
     if (currentPressedTeam > 0 && controllingTeam != currentPressedTeam) {
       if (!holdingActive || activePressTeam != currentPressedTeam) {
-        // First moment of press (or switched teams)
         holdingActive = true;
         activePressTeam = currentPressedTeam;
         pressStartTime = currentMillis;
         lastDisplayedSecond = -1;
       }
 
-      // Calculate how many seconds have passed since they started holding
       unsigned long holdElapsed = (currentMillis - pressStartTime) / 1000;
       int holdRemaining = 5 - (int)holdElapsed;
 
       if (holdRemaining > 0) {
-        // Show progress countdown on line 2 only when the second changes to prevent screen flicker
         if (holdRemaining != lastDisplayedSecond) {
           lastDisplayedSecond = holdRemaining;
           lcd.setCursor(0, 1);
@@ -99,7 +96,6 @@ void runFrontline() {
           lcd.print("s    ");           
         }
       } else {
-        // 5 seconds reached! Capture complete.
         controllingTeam = activePressTeam;
         holdingActive = false;
         activePressTeam = 0;
@@ -114,12 +110,10 @@ void runFrontline() {
       }
     }
     else {
-      // If the button was released early, reset the hold progress
       if (holdingActive) {
         holdingActive = false;
         activePressTeam = 0;
        
-        // Restore LCD back to current controller status
         lcd.setCursor(0, 1);
         if (controllingTeam == 1) {
           lcd.print("STATUS: RED     ");

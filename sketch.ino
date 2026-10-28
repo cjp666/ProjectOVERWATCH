@@ -167,7 +167,6 @@ int getGameDuration(const char* modeTitle) {
     if (key) {
       if (key >= '0' && key <= '9') {
         if (digitCount < 4) {
-          // Shift digits left and add new digit
           inputBuffer[0] = inputBuffer[1];
           inputBuffer[1] = inputBuffer[2];
           inputBuffer[2] = inputBuffer[3];
@@ -179,20 +178,21 @@ int getGameDuration(const char* modeTitle) {
         }
       }
       else if (key == '*') {
-        // Clear / re-enter
         inputBuffer[0] = '0'; inputBuffer[1] = '0'; inputBuffer[2] = '0'; inputBuffer[3] = '0';
         digitCount = 0;
         lcd.setCursor(6, 1);
         lcd.print(inputBuffer);
       }
       else if (key == '#') {
-        // Confirm time
         int totalSeconds = (inputBuffer[0] - '0') * 600 +
                            (inputBuffer[1] - '0') * 60 +
                            (inputBuffer[2] - '0') * 10 +
                            (inputBuffer[3] - '0');
         if (totalSeconds > 0) {
-          return totalSeconds; // Returns duration in seconds
+          // FLUSH BUFFER: Clear out any extra lingering keypresses (like a second #)
+          while (keypad.getKey() != NO_KEY);
+         
+          return totalSeconds;
         }
       }
     }
