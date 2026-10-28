@@ -74,6 +74,9 @@ void loop() {
   else if (currentState == FRONTLINE) {
     runFrontline();
   }
+  else if (currentState == CRITICAL_MASS) {
+    runCriticalMass();
+  }
   else if (currentState == SYSTEM_TEST) {
     runSystemTest(); // This calls the function living in SystemTest.ino!
   }
@@ -86,11 +89,6 @@ void showMenu() {
   lcd.setCursor(0, 1);
   lcd.print("1-4:MODE 9:TEST");
   displayNumber(8888);
-}
-
-void startCriticalMass() {
-  lcd.clear();
-  lcd.print("MODE: CRITICAL");
 }
 
 void startEnigma() {

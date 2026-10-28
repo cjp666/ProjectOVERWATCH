@@ -18,10 +18,10 @@ void runLaunchCountdown() {
 
     // Tone logic: Last 2 seconds (i == 2 or i == 1) get a continuous 2-second beep?
     // Wait, if it loops every second, let's look at the timing:
-    if (i <= 2) {
+    if (i == 2) {
       // For the last 2 seconds, play a longer tone or distinct beep
       tone(RELAY_PIN, 1200, 900); // Higher pitch, nearly full second beep
-    } else {
+    } else if (i != 1) {
       // Standard 1-second beep for seconds 10 down to 3
       tone(RELAY_PIN, 800, 200);  // Short chirp per second
     }
