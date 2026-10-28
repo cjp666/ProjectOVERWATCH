@@ -1,9 +1,14 @@
-// --- FRONTLINE MODE CODE ---
+// --- FRONTLINE MODE CODE (ACCUMULATED TIME / DOMINATION) ---
 
 unsigned long frontlineStartTime = 0;
-unsigned long FRONTLINE_DURATION = 90; // Will be set dynamically
+unsigned long FRONTLINE_DURATION = 90; // Set dynamically from user input
 bool frontlineFinished = false;
 int controllingTeam = 0; // 0 = Neutral, 1 = Red, 2 = Blue
+
+// --- ACCUMULATED TIME TRACKING ---
+unsigned long redTotalSeconds = 0;
+unsigned long blueTotalSeconds = 0;
+unsigned long lastSecondTick = 0;
 
 // --- CAPTURE HOLD VARIABLES ---
 unsigned long pressStartTime = 0;
@@ -12,10 +17,10 @@ bool holdingActive = false;
 int lastDisplayedSecond = -1;
 
 void startFrontline() {
-  // 1. Prompt user for custom game time (e.g. enter 0090 for 90 seconds)
+  // 1. Prompt user for custom game time
   FRONTLINE_DURATION = getGameDuration("FRONTLINE TIME");
 
-  // 2. Run the 10-second pre-game launch sequence with beeps & countdown
+  // 2. Run the 10-second pre-game launch sequence
   runLaunchCountdown();
 
   // 3. Official match start
@@ -26,8 +31,11 @@ void startFrontline() {
   lcd.print("STATUS: NEUTRAL ");
  
   frontlineStartTime = millis();
+  lastSecondTick = frontlineStartTime;
   frontlineFinished = false;
   controllingTeam = 0;
+  redTotalSeconds = 0;
+  blueTotalSeconds = 0;
   activePressTeam = 0;
   holdingActive = false;
   digitalWrite(RELAY_PIN, LOW);
@@ -42,23 +50,38 @@ void runFrontline() {
       long remaining = FRONTLINE_DURATION - elapsed;
       int minutes = remaining / 60;
       int seconds = remaining % 60;
-      displayNumber((minutes * 100) + seconds);
+      displayNumber((minutes * 100) + seconds); // Displays MMSS format
+
+      // --- ACCUMULATE SCORE EVERY SECOND ---
+      if (currentMillis - lastSecondTick >= 1000) {
+        lastSecondTick += 1000;
+        if (controllingTeam == 1) {
+          redTotalSeconds++;
+        } else if (controllingTeam == 2) {
+          blueTotalSeconds++;
+        }
+      }
+
     } else {
+      // Match timer hits zero
       displayNumber(0000);
       frontlineFinished = true;
      
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("MATCH OVER      ");
+      lcd.print("GAME OVER       ");
       lcd.setCursor(0, 1);
-      if (controllingTeam == 1) {
+     
+      // Compare accumulated times to determine the winner
+      if (redTotalSeconds > blueTotalSeconds) {
         lcd.print("WINNER: RED     ");
-      } else if (controllingTeam == 2) {
+      } else if (blueTotalSeconds > redTotalSeconds) {
         lcd.print("WINNER: BLUE    ");
       } else {
         lcd.print("RESULT: DRAW    ");
       }
      
+      // End game horn/buzzer
       tone(RELAY_PIN, 1000, 2000);
     }
   }
@@ -84,6 +107,7 @@ void runFrontline() {
       int holdRemaining = 5 - (int)holdElapsed;
 
       if (holdRemaining > 0) {
+        // Only update LCD if we aren't currently showing hold progress on line 2
         if (holdRemaining != lastDisplayedSecond) {
           lastDisplayedSecond = holdRemaining;
           lcd.setCursor(0, 1);
@@ -96,6 +120,7 @@ void runFrontline() {
           lcd.print("s    ");           
         }
       } else {
+        // 5 seconds reached! Capture complete.
         controllingTeam = activePressTeam;
         holdingActive = false;
         activePressTeam = 0;
@@ -110,10 +135,12 @@ void runFrontline() {
       }
     }
     else {
+      // If the button was released early, reset the hold progress (unless actively holding)
       if (holdingActive) {
         holdingActive = false;
         activePressTeam = 0;
        
+        // Restore LCD back to current controller status
         lcd.setCursor(0, 1);
         if (controllingTeam == 1) {
           lcd.print("STATUS: RED     ");
