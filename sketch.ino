@@ -47,6 +47,8 @@ void setup() {
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);
 
+  randomSeed(analogRead(A0)); // Seeds random generator using open pin electrical noise
+
   showMenu();
 }
 
@@ -76,6 +78,9 @@ void loop() {
   else if (currentState == CRITICAL_MASS) {
     runCriticalMass(); // Critical Mass handles its own keypad/button polling internally
   }
+  else if (currentState == ENIGMA) {
+    runEnigma(); // Enigma handles its own keypad/button polling internally
+  }
   else if (currentState == SYSTEM_TEST) {
     runSystemTest();
   }
@@ -88,11 +93,6 @@ void showMenu() {
   lcd.setCursor(0, 1);
   lcd.print("1-4:MODE 9:TEST");
   displayNumber(8888);
-}
-
-void startEnigma() {
-  lcd.clear();
-  lcd.print("MODE: ENIGMA");
 }
 
 void startHotDrop() {
