@@ -11,7 +11,7 @@
       "left": -165.77,
       "attrs": { "color": "red" }
     },
-    { "type": "wokwi-membrane-keypad", "id": "keypad1", "top": -30.8, "left": 178.4, "attrs": {} },
+    { "type": "wokwi-membrane-keypad", "id": "keypad1", "top": -11.6, "left": 312.8, "attrs": {} },
     {
       "type": "wokwi-pushbutton",
       "id": "btn1",
@@ -33,12 +33,12 @@
       "left": 312.8,
       "attrs": { "pins": "i2c" }
     },
-    { "type": "wokwi-relay-module", "id": "relay1", "top": 86.6, "left": 0, "attrs": {} },
+    { "type": "wokwi-relay-module", "id": "relay1", "top": 67.4, "left": 153.6, "attrs": {} },
     {
       "type": "wokwi-buzzer",
       "id": "bz1",
       "top": 175.2,
-      "left": 69,
+      "left": 193.8,
       "attrs": { "volume": "0.1" }
     }
   ],

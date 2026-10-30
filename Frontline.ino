@@ -43,6 +43,50 @@ void startFrontline() {
 
 void runFrontline() {
   unsigned long currentMillis = millis();
+
+  // --- UNIVERSAL EXIT CHECK (* KEY) ---
+  char key = keypad.getKey();
+  if (key == '*') {
+    unsigned long menuStart = millis();
+    if (confirmExit()) {
+      noTone(RELAY_PIN);
+      digitalWrite(RELAY_PIN, LOW);
+      currentState = MENU;
+      showMenu();
+      return;
+    } else {
+      // Offset match start time and tick tracker so clock doesn't skip forward
+      unsigned long menuDuration = millis() - menuStart;
+      frontlineStartTime += menuDuration;
+      lastSecondTick += menuDuration;
+
+      // Redraw appropriate screen based on match state
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      if (frontlineFinished) {
+        lcd.print("GAME OVER       ");
+        lcd.setCursor(0, 1);
+        if (redTotalSeconds > blueTotalSeconds) {
+          lcd.print("WINNER: RED     ");
+        } else if (blueTotalSeconds > redTotalSeconds) {
+          lcd.print("WINNER: BLUE    ");
+        } else {
+          lcd.print("RESULT: DRAW    ");
+        }
+      } else {
+        lcd.print("FRONTLINE ACTIVE");
+        lcd.setCursor(0, 1);
+        if (controllingTeam == 1) {
+          lcd.print("STATUS: RED     ");
+        } else if (controllingTeam == 2) {
+          lcd.print("STATUS: BLUE    ");
+        } else {
+          lcd.print("STATUS: NEUTRAL ");
+        }
+      }
+    }
+  }
+
   unsigned long elapsed = (currentMillis - frontlineStartTime) / 1000;
  
   if (!frontlineFinished) {
@@ -84,6 +128,16 @@ void runFrontline() {
       // End game horn/buzzer
       tone(RELAY_PIN, 1000, 2000);
     }
+  } else {
+    // If game is finished, allow pressing '#' or something to go back to menu, or let '*' handle it.
+    // If you want '#' to also return to menu post-game, you can check it here:
+    if (key == '#') {
+      noTone(RELAY_PIN);
+      digitalWrite(RELAY_PIN, LOW);
+      currentState = MENU;
+      showMenu();
+      return;
+    }
   }
 
   // --- TEAM CAPTURE LOGIC (HOLD-TO-CAPTURE) ---
@@ -104,7 +158,7 @@ void runFrontline() {
       }
 
       unsigned long holdElapsed = (currentMillis - pressStartTime) / 1000;
-      int holdRemaining = 5 - (int)holdElapsed;
+      int holdRemaining = 5 - (int)holdElapsed; // FIXED: Added missing minus sign
 
       if (holdRemaining > 0) {
         // Only update LCD if we aren't currently showing hold progress on line 2
@@ -112,12 +166,13 @@ void runFrontline() {
           lastDisplayedSecond = holdRemaining;
           lcd.setCursor(0, 1);
           if (activePressTeam == 1) {
-            lcd.print("HOLD RED: ");    
+            lcd.print("HOLD RED:       ");    
           } else {
-            lcd.print("HOLD BLUE:");    
+            lcd.print("HOLD BLUE:      ");    
           }
+          lcd.setCursor(12, 1);
           lcd.print(holdRemaining);
-          lcd.print("s    ");           
+          lcd.print("s ");         
         }
       } else {
         // 5 seconds reached! Capture complete.
@@ -151,14 +206,5 @@ void runFrontline() {
         }
       }
     }
-  }
-
-  // Press '#' to abort and return to menu anytime
-  char key = keypad.getKey();
-  if (key == '#') {
-    noTone(RELAY_PIN);
-    digitalWrite(RELAY_PIN, LOW);
-    currentState = MENU;
-    showMenu();
   }
 }

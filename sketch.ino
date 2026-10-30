@@ -17,10 +17,10 @@ const uint8_t SEG_DATA[] = {
 const byte ROWS = 4;
 const byte COLS = 4;
 char keys[ROWS][COLS] = {
-  {'1','2','3','A'},
-  {'4','5','6','B'},
-  {'7','8','9','C'},
-  {'*','0','#','D'}
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
 };
 byte rowPins[ROWS] = {9, 8, 7, 6};
 byte colPins[COLS] = {5, 2, 12, 11};
@@ -38,10 +38,10 @@ GameState currentState = MENU;
 void setup() {
   lcd.init();
   lcd.backlight();
- 
+
   pinMode(CLK, OUTPUT);
   pinMode(DIO, OUTPUT);
- 
+
   pinMode(RED_BTN, INPUT_PULLUP);
   pinMode(BLUE_BTN, INPUT_PULLUP);
   pinMode(RELAY_PIN, OUTPUT);
@@ -51,9 +51,8 @@ void setup() {
 }
 
 void loop() {
-  char key = keypad.getKey();
-
   if (currentState == MENU) {
+    char key = keypad.getKey(); // Poll key only when we are in the menu
     if (key == '1') {
       currentState = FRONTLINE;
       startFrontline();
@@ -72,13 +71,13 @@ void loop() {
     }
   }
   else if (currentState == FRONTLINE) {
-    runFrontline();
+    runFrontline(); // Frontline handles its own keypad/button polling internally
   }
   else if (currentState == CRITICAL_MASS) {
-    runCriticalMass();
+    runCriticalMass(); // Critical Mass handles its own keypad/button polling internally
   }
   else if (currentState == SYSTEM_TEST) {
-    runSystemTest(); // This calls the function living in SystemTest.ino!
+    runSystemTest();
   }
 }
 
@@ -147,52 +146,4 @@ void displayNumber(int num) {
   tmStart();
   tmWriteByte(0x88 | 0x07);
   tmStop();
-}
-
-// --- GLOBAL TIME INPUT HELPER ---
-int getGameDuration(const char* modeTitle) {
-  char inputBuffer[5] = "0000";
-  int digitCount = 0;
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print(modeTitle);
-  lcd.setCursor(0, 1);
-  lcd.print("TIME: 0000 [#OK]");
-
-  while (true) {
-    char key = keypad.getKey();
-    if (key) {
-      if (key >= '0' && key <= '9') {
-        if (digitCount < 4) {
-          inputBuffer[0] = inputBuffer[1];
-          inputBuffer[1] = inputBuffer[2];
-          inputBuffer[2] = inputBuffer[3];
-          inputBuffer[3] = key;
-          digitCount++;
-         
-          lcd.setCursor(6, 1);
-          lcd.print(inputBuffer);
-        }
-      }
-      else if (key == '*') {
-        inputBuffer[0] = '0'; inputBuffer[1] = '0'; inputBuffer[2] = '0'; inputBuffer[3] = '0';
-        digitCount = 0;
-        lcd.setCursor(6, 1);
-        lcd.print(inputBuffer);
-      }
-      else if (key == '#') {
-        int totalSeconds = (inputBuffer[0] - '0') * 600 +
-                           (inputBuffer[1] - '0') * 60 +
-                           (inputBuffer[2] - '0') * 10 +
-                           (inputBuffer[3] - '0');
-        if (totalSeconds > 0) {
-          // FLUSH BUFFER: Clear out any extra lingering keypresses (like a second #)
-          while (keypad.getKey() != NO_KEY);
-         
-          return totalSeconds;
-        }
-      }
-    }
-  }
 }
