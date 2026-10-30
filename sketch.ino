@@ -81,6 +81,9 @@ void loop() {
   else if (currentState == ENIGMA) {
     runEnigma(); // Enigma handles its own keypad/button polling internally
   }
+  else if (currentState == HOT_DROP) {
+    runHotDrop(); // Hot Drop handles its own keypad/button polling internally
+  }
   else if (currentState == SYSTEM_TEST) {
     runSystemTest();
   }
@@ -93,11 +96,6 @@ void showMenu() {
   lcd.setCursor(0, 1);
   lcd.print("1-4:MODE 9:TEST");
   displayNumber(8888);
-}
-
-void startHotDrop() {
-  lcd.clear();
-  lcd.print("MODE: HOT DROP");
 }
 
 // --- TM1637 HELPER UTILITIES ---
